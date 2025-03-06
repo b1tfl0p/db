@@ -1,5 +1,6 @@
-# Binary
+# Project binaries:
 db
+*.db
 
 # Prerequisites
 *.d
