@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 typedef struct {
@@ -34,7 +33,7 @@ typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 typedef struct {
-  u_int32_t id;
+  uint32_t id;
   char username[COLUMN_USERNAME_SIZE + 1];
   char email[COLUMN_EMAIL_SIZE + 1];
 } Row;
@@ -46,33 +45,33 @@ typedef struct {
 
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct *)0)->Attribute)
 
-const u_int32_t ID_SIZE = size_of_attribute(Row, id);
-const u_int32_t USERNAME_SIZE = size_of_attribute(Row, username);
-const u_int32_t EMAIL_SIZE = size_of_attribute(Row, email);
-const u_int32_t ID_OFFSET = 0;
-const u_int32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
-const u_int32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
-const u_int32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
+const uint32_t ID_SIZE = size_of_attribute(Row, id);
+const uint32_t USERNAME_SIZE = size_of_attribute(Row, username);
+const uint32_t EMAIL_SIZE = size_of_attribute(Row, email);
+const uint32_t ID_OFFSET = 0;
+const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
+const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
+const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
 
-const u_int32_t PAGE_SIZE = 4096;
+const uint32_t PAGE_SIZE = 4096;
 #define TABLE_MAX_PAGES 100
-const u_int32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
-const u_int32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
+const uint32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
+const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
 typedef struct {
   int file_descriptor;
-  u_int32_t file_length;
+  uint32_t file_length;
   void *pages[TABLE_MAX_PAGES];
 } Pager;
 
 typedef struct {
-  u_int32_t num_rows;
+  uint32_t num_rows;
   Pager *pager;
 } Table;
 
 typedef struct {
   Table *table;
-  u_int32_t row_num;
+  uint32_t row_num;
   bool end_of_table; // Indicates a position one past the last element
 } Cursor;
 
@@ -92,7 +91,7 @@ void deserialize_row(void *source, Row *destination) {
   memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE);
 }
 
-void *get_page(Pager *pager, u_int32_t page_num) {
+void *get_page(Pager *pager, uint32_t page_num) {
   if (page_num > TABLE_MAX_PAGES) {
     printf("Tried to fetch page number out of bounds. %d > %d\n", page_num,
            TABLE_MAX_PAGES);
@@ -102,7 +101,7 @@ void *get_page(Pager *pager, u_int32_t page_num) {
   if (pager->pages[page_num] == NULL) {
     // Cache miss. Allocate memory and load from file:
     void *page = malloc(PAGE_SIZE);
-    u_int32_t num_pages = pager->file_length / PAGE_SIZE;
+    uint32_t num_pages = pager->file_length / PAGE_SIZE;
 
     // We might save a partial page at the end of the file:
     if (pager->file_length % PAGE_SIZE) {
@@ -143,11 +142,11 @@ Cursor *table_end(Table *table) {
 }
 
 void *cursor_value(Cursor *cursor) {
-  u_int32_t row_num = cursor->row_num;
-  u_int32_t page_num = row_num / ROWS_PER_PAGE;
+  uint32_t row_num = cursor->row_num;
+  uint32_t page_num = row_num / ROWS_PER_PAGE;
   void *page = get_page(cursor->table->pager, page_num);
-  u_int32_t row_offset = row_num % ROWS_PER_PAGE;
-  u_int32_t byte_offset = row_offset * ROW_SIZE;
+  uint32_t row_offset = row_num % ROWS_PER_PAGE;
+  uint32_t byte_offset = row_offset * ROW_SIZE;
   return page + byte_offset;
 }
 
@@ -177,7 +176,7 @@ Pager *pager_open(const char *filename) {
   pager->file_descriptor = fd;
   pager->file_length = file_length;
 
-  for (u_int32_t i = 0; i < TABLE_MAX_PAGES; i++) {
+  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
     pager->pages[i] = NULL;
   }
 
@@ -186,7 +185,7 @@ Pager *pager_open(const char *filename) {
 
 Table *db_open(const char *filename) {
   Pager *pager = pager_open(filename);
-  u_int32_t num_rows = pager->file_length / ROW_SIZE;
+  uint32_t num_rows = pager->file_length / ROW_SIZE;
 
   Table *table = malloc(sizeof(Table));
   table->pager = pager;
@@ -224,7 +223,7 @@ void close_input_buffer(InputBuffer *input_buffer) {
   free(input_buffer);
 }
 
-void pager_flush(Pager *pager, u_int32_t page_num, u_int32_t size) {
+void pager_flush(Pager *pager, uint32_t page_num, uint32_t size) {
   if (pager->pages[page_num] == NULL) {
     printf("Tried to flush null page\n");
     exit(EXIT_FAILURE);
@@ -248,9 +247,9 @@ void pager_flush(Pager *pager, u_int32_t page_num, u_int32_t size) {
 
 void db_close(Table *table) {
   Pager *pager = table->pager;
-  u_int32_t num_full_pages = table->num_rows / ROWS_PER_PAGE;
+  uint32_t num_full_pages = table->num_rows / ROWS_PER_PAGE;
 
-  for (u_int32_t i = 0; i < num_full_pages; i++) {
+  for (uint32_t i = 0; i < num_full_pages; i++) {
     if (pager->pages[i] == NULL) {
       continue;
     }
@@ -261,9 +260,9 @@ void db_close(Table *table) {
 
   // There may be a partial page to write to the end of the file.
   // This should not be needed after we switch to a B-tree.
-  u_int32_t num_additional_rows = table->num_rows % ROWS_PER_PAGE;
+  uint32_t num_additional_rows = table->num_rows % ROWS_PER_PAGE;
   if (num_additional_rows > 0) {
-    u_int32_t page_num = num_full_pages;
+    uint32_t page_num = num_full_pages;
     if (pager->pages[page_num] != NULL) {
       pager_flush(pager, page_num, num_additional_rows * ROW_SIZE);
       free(pager->pages[page_num]);
@@ -276,7 +275,7 @@ void db_close(Table *table) {
     printf("Error closing db file.\n");
     exit(EXIT_FAILURE);
   }
-  for (u_int32_t i = 0; i < TABLE_MAX_PAGES; i++) {
+  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
     void *page = pager->pages[i];
     if (page) {
       free(page);
