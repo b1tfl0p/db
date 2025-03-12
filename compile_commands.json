@@ -1,0 +1,14 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-o",
+      "db",
+      "main.c"
+    ],
+    "directory": "/home/mark/Code/learning/db",
+    "file": "/home/mark/Code/learning/db/main.c",
+    "output": "/home/mark/Code/learning/db/db"
+  }
+]

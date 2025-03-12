@@ -1,6 +1,7 @@
 # Project binaries:
 db
 *.db
+.cache
 
 # Prerequisites
 *.d
